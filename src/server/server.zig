@@ -1530,7 +1530,7 @@ fn _handleHandshake(comptime H: type, worker: anytype, hc: *HandlerConn(H), ctx:
         return .{ false, false };
     }
 
-    const n = std.os.windows.ws2_32.recv(hc.socket, buf[len..].ptr, @intCast(buf[len..].len), 0);
+    const n: usize = @as(usize, @intCast(std.os.windows.ws2_32.recv(hc.socket, buf[len..].ptr, @intCast(buf[len..].len), 0)));
     if (n == std.os.windows.ws2_32.SOCKET_ERROR) {
         const err = std.os.windows.ws2_32.WSAGetLastError();
 
