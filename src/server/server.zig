@@ -275,12 +275,17 @@ pub fn Server(comptime H: type) type {
         pub fn stop(self: *Self) void {
             self._mut.lock();
             defer self._mut.unlock();
+
             for (self._signals) |s| {
                 if (blockingMode()) {
-                    // necessary to unblock accept on linux
-                    // (which might not be that necessary since, on Linux,
-                    // NonBlocking should be used)
-                    posix.shutdown(s, .recv) catch {};
+                    if (builtin.os.tag == .windows) {
+                        _ = std.os.windows.ws2_32.shutdown(@ptrCast(s), std.os.windows.ws2_32.SD_RECEIVE);
+                    } else {
+                        // necessary to unblock accept on linux
+                        // (which might not be that necessary since, on Linux,
+                        // NonBlocking should be used)
+                        posix.shutdown(s, .recv) catch {};
+                    }
                 }
                 posix.close(s);
             }
