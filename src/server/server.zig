@@ -1530,17 +1530,24 @@ fn _handleHandshake(comptime H: type, worker: anytype, hc: *HandlerConn(H), ctx:
         return .{ false, false };
     }
 
-    const n = std.os.windows.ws2_32.recv(hc.socket, buf[len..].ptr, @intCast(buf[len..].len), 0) catch |err| {
+    const n = std.os.windows.ws2_32.recv(hc.socket, buf[len..].ptr, @intCast(buf[len..].len), 0);
+    if (n == std.os.windows.ws2_32.SOCKET_ERROR) {
+        const err = std.os.windows.ws2_32.WSAGetLastError();
+
         switch (err) {
-            error.BrokenPipe, error.ConnectionResetByPeer => log.debug("({f}) handshake connection closed: {}", .{ conn.address, err }),
-            error.WouldBlock => {
+            .WSAECONNRESET, .WSAECONNABORTED, .WSAESHUTDOWN => {
+                log.debug("({f}) handshake connection closed", .{conn.address});
+            },
+            .WSAEWOULDBLOCK => {
                 std.debug.assert(blockingMode());
                 log.debug("({f}) handshake timeout", .{conn.address});
             },
-            else => log.warn("({f}) handshake error reading from socket: {}", .{ conn.address, err }),
+            else => {
+                log.warn("({f}) handshake error reading from socket: {}", .{ conn.address, err });
+            },
         }
         return .{ false, false };
-    };
+    }
 
     if (n == 0) {
         log.debug("({f}) handshake connection closed", .{conn.address});
