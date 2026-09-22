@@ -127,7 +127,7 @@ pub const Reader = struct {
     pub fn fill(self: *Reader, stream: anytype) !void {
         const pos = self.pos;
         std.debug.assert(self.buf.data.len > pos);
-        const n = try stream.read(self.buf.data[pos..]);
+        const n: usize = @as(usize, @intCast(std.os.windows.ws2_32.recv(stream.handle, self.buf.data[pos..].ptr, @intCast(self.buf.data[pos..].len), 0)));
         if (n == 0) {
             return error.Closed;
         }
