@@ -1612,10 +1612,7 @@ fn _handleClientData(comptime H: type, hc: *HandlerConn(H), allocator: Allocator
     var conn = &hc.conn;
     var reader = &hc.reader.?;
     reader.fill(conn.stream) catch |err| {
-        switch (err) {
-            error.BrokenPipe, error.Closed, error.ConnectionResetByPeer => log.debug("({f}) connection closed: {}", .{ conn.address, err }),
-            else => log.warn("({f}) error reading from connection: {}", .{ conn.address, err }),
-        }
+        log.debug("({f}) connection closed: {}", .{ conn.address, err });
         return false;
     };
 
