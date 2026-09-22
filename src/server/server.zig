@@ -1530,7 +1530,7 @@ fn _handleHandshake(comptime H: type, worker: anytype, hc: *HandlerConn(H), ctx:
         return .{ false, false };
     }
 
-    const n = posix.read(hc.socket, buf[len..]) catch |err| {
+    const n = hc.conn.stream.read(buf[len..]) catch |err| {
         switch (err) {
             error.BrokenPipe, error.ConnectionResetByPeer => log.debug("({f}) handshake connection closed: {}", .{ conn.address, err }),
             error.WouldBlock => {
