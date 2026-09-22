@@ -1448,15 +1448,24 @@ pub const Conn = struct {
         defer self.lock.unlock();
 
         var i: usize = 0;
-        while (true) {
-            var n = try std.posix.writev(socket, vec[i..]);
-            while (n >= vec[i].len) {
-                n -= vec[i].len;
-                i += 1;
-                if (i >= vec.len) return;
+        while (i < vec.len) {
+            const n = std.os.windows.ws2_32.send(socket, vec[i].base, @intCast(vec[i].len), 0);
+
+            if (n == std.os.windows.ws2_32.SOCKET_ERROR) {
+                return error.BrokenPipe;
             }
-            vec[i].base += n;
-            vec[i].len -= n;
+
+            if (n == 0) {
+                return error.BrokenPipe;
+            }
+
+            const sent: usize = @intCast(n);
+            if (sent < vec[i].len) {
+                vec[i].base += sent;
+                vec[i].len -= sent;
+            } else {
+                i += 1;
+            }
         }
     }
 
